@@ -1,0 +1,6 @@
+Tests: build
+Depends: libappstream-dev, build-essential
+
+Tests: cache-refresh
+Depends: appstream
+Restrictions: needs-root

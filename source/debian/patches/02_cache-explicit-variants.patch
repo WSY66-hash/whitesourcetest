@@ -1,0 +1,63 @@
+From 734e9da66bf12fcaa94c10465db2dcf8bb2b94cb Mon Sep 17 00:00:00 2001
+From: Matthias Klumpp <matthias@tenstral.net>
+Date: Sun, 19 Aug 2018 16:21:15 +0200
+Subject: [PATCH] cache: Set explicit variant types for cases where they can
+ not be inferred
+
+This ensures we do not run into assertion failures in case no array or
+dict elements exist from which the final variant type can be
+automatically inferred.
+This resolves #198
+
+Bug: https://github.com/ximion/appstream/issues/198
+Bug-Ubuntu: https://launchpad.net/bugs/1792537
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=906538
+Origin: https://github.com/ximion/appstream/commit/734e9da66bf12fcaa94c10465db2dcf8bb2b94cb
+
+---
+ src/as-content-rating.c | 2 +-
+ src/as-release.c        | 4 ++--
+ src/as-screenshot.c     | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/src/as-content-rating.c
++++ b/src/as-content-rating.c
+@@ -499,7 +499,7 @@ as_content_rating_to_variant (AsContentR
+ 	GVariantBuilder rating_b;
+ 	guint j;
+ 
+-	g_variant_builder_init (&values_b, G_VARIANT_TYPE_ARRAY);
++	g_variant_builder_init (&values_b, (const GVariantType *) "a{su}");
+ 	for (j = 0; j < priv->keys->len; j++) {
+ 		AsContentRatingKey *key = (AsContentRatingKey*) g_ptr_array_index (priv->keys, j);
+ 		g_variant_builder_add (&values_b, "{su}", key->id, key->value);
+--- a/src/as-release.c
++++ b/src/as-release.c
+@@ -923,14 +923,14 @@ as_release_to_variant (AsRelease *releas
+ 	gboolean have_sizes = FALSE;
+ 
+ 	/* build checksum info */
+-	g_variant_builder_init (&checksum_b, G_VARIANT_TYPE_DICTIONARY);
++	g_variant_builder_init (&checksum_b, (const GVariantType *) "a{us}");
+ 	for (j = 0; j < priv->checksums->len; j++) {
+ 		AsChecksum *cs = AS_CHECKSUM (g_ptr_array_index (priv->checksums, j));
+ 		as_checksum_to_variant (cs, &checksum_b);
+ 	}
+ 
+ 	/* build size info */
+-	g_variant_builder_init (&sizes_b, G_VARIANT_TYPE_DICTIONARY);
++	g_variant_builder_init (&sizes_b, (const GVariantType *) "a{ut}");
+ 	for (j = 0; j < AS_SIZE_KIND_LAST; j++) {
+ 		if (as_release_get_size (release, (AsSizeKind) j) > 0) {
+ 			g_variant_builder_add (&sizes_b, "{ut}",
+--- a/src/as-screenshot.c
++++ b/src/as-screenshot.c
+@@ -598,7 +598,7 @@ as_screenshot_to_variant (AsScreenshot *
+ 	if (priv->images->len == 0)
+ 		return FALSE;
+ 
+-	g_variant_builder_init (&images_b, G_VARIANT_TYPE_ARRAY);
++	g_variant_builder_init (&images_b, (const GVariantType *) "aa{sv}");
+ 	for (i = 0; i < priv->images->len; i++)
+ 		as_image_to_variant (AS_IMAGE (g_ptr_array_index (priv->images, i)), &images_b);
+ 
